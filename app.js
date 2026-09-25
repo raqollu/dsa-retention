@@ -9,7 +9,7 @@ const OUTCOME_LABELS = {
 };
 
 let baseData = { algorithms: [] };
-let progress = loadProgress();
+let progress = normalizeProgress(loadProgress());
 let includeOverdue = true;
 let activeReview = null;
 let renderedDay = localISO();
@@ -42,12 +42,24 @@ function loadProgress() {
   try { return JSON.parse(localStorage.getItem("dsa-retention-progress")) || { reviews:{}, customAlgorithms:[] }; }
   catch { return { reviews:{}, customAlgorithms:[] }; }
 }
+function normalizeProgress(raw) {
+  return {
+    reviews: raw.reviews || {},
+    customAlgorithms: raw.customAlgorithms || [],
+    deletedAlgorithms: raw.deletedAlgorithms || [],
+    deletedReviews: raw.deletedReviews || []
+  };
+}
 function saveProgress() {
   localStorage.setItem("dsa-retention-progress", JSON.stringify(progress));
 }
 function reviewKey(algorithmId, offset) { return `${algorithmId}:D${offset}`; }
 function reviewRecord(algorithmId, offset) { return progress.reviews[reviewKey(algorithmId, offset)] || null; }
-function allAlgorithms() { return [...baseData.algorithms, ...(progress.customAlgorithms || [])]; }
+function isReviewDeleted(algorithmId, offset) { return progress.deletedReviews.includes(reviewKey(algorithmId, offset)); }
+function allAlgorithms() {
+  const deleted = new Set(progress.deletedAlgorithms);
+  return [...baseData.algorithms, ...(progress.customAlgorithms || [])].filter(a => !deleted.has(a.id));
+}
 
 function normalizeAlgorithm(a) {
   const problems = a.problems || {};
@@ -61,14 +73,16 @@ function normalizeAlgorithm(a) {
 }
 
 function reviewsForAlgorithm(a) {
-  return REVIEW_OFFSETS.map(offset => ({
-    algorithm: a,
-    offset,
-    stage: STAGE_LABELS[offset],
-    due: addDays(a.learnedOn, offset),
-    problem: a.problems?.[STAGE_LABELS[offset]] || null,
-    record: reviewRecord(a.id, offset)
-  }));
+  return REVIEW_OFFSETS
+    .filter(offset => !isReviewDeleted(a.id, offset))
+    .map(offset => ({
+      algorithm: a,
+      offset,
+      stage: STAGE_LABELS[offset],
+      due: addDays(a.learnedOn, offset),
+      problem: a.problems?.[STAGE_LABELS[offset]] || null,
+      record: reviewRecord(a.id, offset)
+    }));
 }
 
 function render() {
@@ -79,7 +93,8 @@ function render() {
   const reviews = algorithms.flatMap(reviewsForAlgorithm);
   const due = reviews.filter(r => !r.record && (includeOverdue ? r.due <= today : r.due === today));
   const upcoming = reviews.filter(r => !r.record && r.due > today).sort((a,b) => a.due.localeCompare(b.due));
-  const completed = Object.keys(progress.reviews).length;
+  const visibleReviewKeys = new Set(reviews.map(r => reviewKey(r.algorithm.id, r.offset)));
+  const completed = Object.keys(progress.reviews).filter(key => visibleReviewKeys.has(key)).length;
 
   $("dueCount").textContent = due.length;
   $("activeCount").textContent = algorithms.length;
@@ -185,8 +200,20 @@ function openAlgorithm(a) {
   const history = reviews.map(r => {
     const title = r.problem?.title || "Problem slot not populated";
     const status = r.record ? `${OUTCOME_LABELS[r.record.outcome]} · ${formatDate(r.record.completedOn, true)}` : (r.due < localISO() ? "Due" : formatDate(r.due, true));
-    return `<div class="history-row"><span class="badge">${r.stage}</span><div><strong>${escapeHTML(title)}</strong><div class="history-status">${escapeHTML(r.problem?.focus || "Review")}</div></div><span class="history-status">${status}</span></div>`;
+    return `
+      <div class="history-row">
+        <span class="badge">${r.stage}</span>
+        <div>
+          <strong>${escapeHTML(title)}</strong>
+          <div class="history-status">${escapeHTML(r.problem?.focus || "Review")}</div>
+        </div>
+        <div class="history-actions">
+          <span class="history-status">${status}</span>
+          <button class="danger-link delete-review-btn" type="button" data-offset="${r.offset}">Delete</button>
+        </div>
+      </div>`;
   }).join("");
+
   $("algorithmDetails").innerHTML = `
     <div class="detail-header"><p class="eyebrow">LEARNED ${formatDate(a.learnedOn, true).toUpperCase()}</p><h2>${escapeHTML(a.name)}</h2></div>
     <div class="mental-model"><strong>Mental model</strong><br>${escapeHTML(a.mentalModel || "Not recorded yet")}</div>
@@ -196,8 +223,44 @@ function openAlgorithm(a) {
       <div><strong>${a.confidence.recognition}/5</strong><span class="muted small">Recognition</span></div>
     </div>
     <h3>Weaknesses</h3><ul class="small muted">${weaknessHTML}</ul>
-    <div class="review-history"><h3>Review path</h3>${history}</div>`;
+    <div class="review-history"><h3>Review path</h3>${history}</div>
+    <div class="danger-zone">
+      <div><strong>Delete algorithm</strong><p class="muted small">Removes this algorithm and all of its review entries from this browser.</p></div>
+      <button class="danger-button" id="deleteAlgorithmBtn" type="button">Delete algorithm</button>
+    </div>`;
+
+  $("algorithmDetails").querySelectorAll(".delete-review-btn").forEach(button => {
+    button.addEventListener("click", () => deleteReview(a, Number(button.dataset.offset)));
+  });
+  $("deleteAlgorithmBtn").addEventListener("click", () => deleteAlgorithm(a));
   $("algorithmDialog").showModal();
+}
+
+function deleteReview(a, offset) {
+  const stage = STAGE_LABELS[offset];
+  const problemTitle = a.problems?.[stage]?.title || stage + " review";
+  if (!window.confirm(`Delete "${problemTitle}" from ${a.name}?`)) return;
+
+  const key = reviewKey(a.id, offset);
+  if (!progress.deletedReviews.includes(key)) progress.deletedReviews.push(key);
+  delete progress.reviews[key];
+  saveProgress();
+  $("algorithmDialog").close();
+  render();
+}
+
+function deleteAlgorithm(a) {
+  if (!window.confirm(`Delete ${a.name} and all of its reviews from this dashboard?`)) return;
+
+  if (!progress.deletedAlgorithms.includes(a.id)) progress.deletedAlgorithms.push(a.id);
+  progress.customAlgorithms = progress.customAlgorithms.filter(item => item.id !== a.id);
+  progress.deletedReviews = progress.deletedReviews.filter(key => !key.startsWith(a.id + ":"));
+  Object.keys(progress.reviews).forEach(key => {
+    if (key.startsWith(a.id + ":")) delete progress.reviews[key];
+  });
+  saveProgress();
+  $("algorithmDialog").close();
+  render();
 }
 
 function escapeHTML(str = "") {
@@ -205,6 +268,14 @@ function escapeHTML(str = "") {
 }
 
 $("showOverdueBtn").addEventListener("click", () => { includeOverdue = !includeOverdue; render(); });
+$("reviewCloseBtn").addEventListener("click", () => $("reviewDialog").close());
+$("addCloseBtn").addEventListener("click", () => $("addDialog").close());
+
+[$("reviewDialog"), $("algorithmDialog"), $("addDialog")].forEach(dialog => {
+  dialog.addEventListener("click", event => {
+    if (event.target === dialog) dialog.close();
+  });
+});
 $("revealAlgorithmBtn").addEventListener("click", () => {
   const el = $("algorithmReveal");
   el.hidden = !el.hidden;
