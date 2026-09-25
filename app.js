@@ -12,6 +12,7 @@ let baseData = { algorithms: [] };
 let progress = loadProgress();
 let includeOverdue = true;
 let activeReview = null;
+let renderedDay = localISO();
 
 const $ = (id) => document.getElementById(id);
 
@@ -72,6 +73,7 @@ function reviewsForAlgorithm(a) {
 
 function render() {
   const today = localISO();
+  renderedDay = today;
   $("todayLabel").textContent = new Intl.DateTimeFormat("en-IN", {weekday:"short", day:"numeric", month:"short"}).format(new Date());
   const algorithms = allAlgorithms().map(normalizeAlgorithm);
   const reviews = algorithms.flatMap(reviewsForAlgorithm);
@@ -87,6 +89,11 @@ function render() {
   renderToday(due, today);
   renderUpcoming(upcoming.slice(0, 8));
   renderAlgorithms(algorithms);
+}
+
+function refreshIfDayChanged() {
+  const today = localISO();
+  if (today !== renderedDay) render();
 }
 
 function renderToday(items, today) {
@@ -257,5 +264,12 @@ async function boot() {
     baseData = { algorithms: [] };
   }
   render();
+
+  // Keep the dashboard correct even when it stays open across midnight.
+  setInterval(refreshIfDayChanged, 60_000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshIfDayChanged();
+  });
+  window.addEventListener("focus", refreshIfDayChanged);
 }
 boot();
