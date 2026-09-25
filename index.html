@@ -26,7 +26,13 @@
       <article class="stat"><span id="streakCount">0</span><small>reviews completed</small></article>
     </section>
 
-    <section class="section" id="todaySection">
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab-button active" type="button" data-tab="today" aria-selected="true">Today <span id="todayTabCount" class="tab-count">0</span></button>
+      <button class="tab-button" type="button" data-tab="upcoming" aria-selected="false">Next reviews <span id="upcomingTabCount" class="tab-count">0</span></button>
+      <button class="tab-button" type="button" data-tab="memory" aria-selected="false">Memory map <span id="memoryTabCount" class="tab-count">0</span></button>
+    </nav>
+
+    <section class="section tab-panel active" id="todaySection" data-panel="today">
       <div class="section-head">
         <div>
           <p class="eyebrow">TODAY</p>
@@ -37,7 +43,7 @@
       <div id="todayList" class="stack"></div>
     </section>
 
-    <section class="section">
+    <section class="section tab-panel" id="upcomingSection" data-panel="upcoming" hidden>
       <div class="section-head">
         <div>
           <p class="eyebrow">UPCOMING</p>
@@ -47,7 +53,7 @@
       <div id="upcomingList" class="timeline"></div>
     </section>
 
-    <section class="section">
+    <section class="section tab-panel" id="memorySection" data-panel="memory" hidden>
       <div class="section-head">
         <div>
           <p class="eyebrow">ALGORITHMS</p>
