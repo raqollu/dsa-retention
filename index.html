@@ -65,8 +65,8 @@
   </main>
 
   <dialog id="reviewDialog" class="modal">
-    <form method="dialog" class="modal-card" id="reviewForm">
-      <button class="modal-close" value="cancel" aria-label="Close">×</button>
+    <form class="modal-card" id="reviewForm">
+      <button class="modal-close" id="reviewCloseBtn" type="button" aria-label="Close">×</button>
       <p class="eyebrow" id="reviewStage"></p>
       <h2 id="reviewTitle"></h2>
       <p class="muted" id="reviewPrompt"></p>
@@ -88,27 +88,27 @@
           <label><input type="radio" name="outcome" value="concept"><span>Concept issue</span></label>
         </div>
       </fieldset>
-      <button class="primary full" value="default" type="submit">Save review</button>
+      <button class="primary full" type="submit">Save review</button>
     </form>
   </dialog>
 
   <dialog id="algorithmDialog" class="modal">
     <div class="modal-card details-card">
-      <button class="modal-close" id="algorithmCloseBtn" aria-label="Close">×</button>
+      <button class="modal-close" id="algorithmCloseBtn" type="button" aria-label="Close">×</button>
       <div id="algorithmDetails"></div>
     </div>
   </dialog>
 
   <dialog id="addDialog" class="modal">
-    <form method="dialog" class="modal-card" id="addForm">
-      <button class="modal-close" value="cancel" aria-label="Close">×</button>
+    <form class="modal-card" id="addForm">
+      <button class="modal-close" id="addCloseBtn" type="button" aria-label="Close">×</button>
       <p class="eyebrow">NEW ALGORITHM</p>
       <h2>Add a retention track</h2>
       <label class="field">Algorithm name<input id="newName" required placeholder="e.g. Segment Tree"></label>
       <label class="field">Learned on<input id="newDate" type="date" required></label>
       <label class="field">Core mental model<textarea id="newMentalModel" rows="3" placeholder="One sentence you should be able to reconstruct from."></textarea></label>
       <p class="muted small">This creates the D0/D1/D5/D7/D15/D25 schedule. Problem slots can be populated later from the data file.</p>
-      <button class="primary full" value="default" type="submit">Create track</button>
+      <button class="primary full" type="submit">Create track</button>
     </form>
   </dialog>
 
