@@ -61,7 +61,8 @@ function normalizeProgress(raw) {
     reviews: raw.reviews || {},
     customAlgorithms: raw.customAlgorithms || [],
     deletedAlgorithms: raw.deletedAlgorithms || [],
-    deletedReviews: raw.deletedReviews || []
+    deletedReviews: raw.deletedReviews || [],
+    extraReviews: raw.extraReviews || []
   };
 }
 
@@ -134,6 +135,28 @@ function reviewsForAlgorithm(a) {
       reviews.push(review);
     });
   }
+
+  (progress.extraReviews || [])
+    .filter(extra => extra.algorithmId === a.id)
+    .forEach(extra => {
+      const key = reviewKey(a.id, `EXTRA:${extra.id}`);
+      if (isReviewDeleted(key)) return;
+
+      const review = {
+        algorithm: a,
+        offset: null,
+        stage: "Redo",
+        problemIndex: null,
+        reviewId: `EXTRA:${extra.id}`,
+        key,
+        due: extra.due,
+        problem: extra.problem || null,
+        isExtra: true,
+        sourceKey: extra.sourceKey || null
+      };
+      review.record = progress.reviews[key] || null;
+      reviews.push(review);
+    });
 
   return reviews;
 }
@@ -232,8 +255,9 @@ function renderAlgorithms(algorithms) {
 
   algorithms.forEach(a => {
     const reviews = reviewsForAlgorithm(a);
-    const completed = reviews.filter(r => r.record).length;
-    const total = reviews.length;
+    const scheduledReviews = reviews.filter(r => !r.isExtra);
+    const completed = scheduledReviews.filter(r => r.record).length;
+    const total = scheduledReviews.length;
     const pct = total ? Math.round((completed / total) * 100) : 0;
     const next = reviews
       .filter(r => !r.record)
@@ -303,6 +327,7 @@ function openAlgorithm(a) {
         </div>
         <div class="history-actions">
           <span class="history-status">${status}</span>
+          ${r.record ? `<button class="history-link review-again-btn" type="button" data-review-id="${escapeHTML(r.reviewId)}">Review today</button>` : ""}
           <button class="danger-link delete-review-btn" type="button" data-review-id="${escapeHTML(r.reviewId)}">Delete</button>
         </div>
       </div>`;
@@ -330,6 +355,13 @@ function openAlgorithm(a) {
       <button class="danger-button" id="deleteAlgorithmBtn" type="button">Delete algorithm</button>
     </div>`;
 
+  $("algorithmDetails").querySelectorAll(".review-again-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      const review = reviews.find(r => r.reviewId === button.dataset.reviewId);
+      if (review) reviewAgainToday(a, review);
+    });
+  });
+
   $("algorithmDetails").querySelectorAll(".delete-review-btn").forEach(button => {
     button.addEventListener("click", () => {
       const review = reviews.find(r => r.reviewId === button.dataset.reviewId);
@@ -341,11 +373,45 @@ function openAlgorithm(a) {
   $("algorithmDialog").showModal();
 }
 
+function reviewAgainToday(a, review) {
+  const sourceKey = review.sourceKey || review.key;
+  const today = localISO();
+
+  const alreadyQueued = (progress.extraReviews || []).some(extra => {
+    const extraKey = reviewKey(a.id, `EXTRA:${extra.id}`);
+    return extra.algorithmId === a.id &&
+      extra.sourceKey === sourceKey &&
+      extra.due === today &&
+      !progress.reviews[extraKey];
+  });
+
+  if (alreadyQueued) {
+    window.alert("This question is already in today's review queue.");
+    return;
+  }
+
+  progress.extraReviews.push({
+    id: Date.now().toString(36),
+    algorithmId: a.id,
+    sourceKey,
+    due: today,
+    problem: review.problem || null
+  });
+
+  saveProgress();
+  $("algorithmDialog").close();
+  render();
+}
+
 function deleteReview(a, review) {
   const problemTitle = review.problem?.title || review.stage + " review";
   if (!window.confirm(`Delete "${problemTitle}" from ${a.name}?`)) return;
 
-  if (!progress.deletedReviews.includes(review.key)) {
+  if (review.isExtra) {
+    progress.extraReviews = progress.extraReviews.filter(extra =>
+      reviewKey(a.id, `EXTRA:${extra.id}`) !== review.key
+    );
+  } else if (!progress.deletedReviews.includes(review.key)) {
     progress.deletedReviews.push(review.key);
   }
 
@@ -364,6 +430,7 @@ function deleteAlgorithm(a) {
 
   progress.customAlgorithms = progress.customAlgorithms.filter(item => item.id !== a.id);
   progress.deletedReviews = progress.deletedReviews.filter(key => !key.startsWith(a.id + ":"));
+  progress.extraReviews = progress.extraReviews.filter(extra => extra.algorithmId !== a.id);
 
   Object.keys(progress.reviews).forEach(key => {
     if (key.startsWith(a.id + ":")) delete progress.reviews[key];
