@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f6f5f2" />
+  <title>DSA Retention</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">DSA RETENTION</p>
+        <h1>Remember the idea, not the template.</h1>
+      </div>
+      <div class="date-pill" id="todayLabel"></div>
+    </header>
+
+    <section class="stats" aria-label="Summary">
+      <article class="stat"><span id="dueCount">0</span><small>due</small></article>
+      <article class="stat"><span id="activeCount">0</span><small>active algorithms</small></article>
+      <article class="stat"><span id="streakCount">0</span><small>reviews completed</small></article>
+    </section>
+
+    <section class="section" id="todaySection">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">TODAY</p>
+          <h2>Blind review queue</h2>
+        </div>
+        <button class="ghost" id="showOverdueBtn" type="button">Include overdue</button>
+      </div>
+      <div id="todayList" class="stack"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">UPCOMING</p>
+          <h2>Next reviews</h2>
+        </div>
+      </div>
+      <div id="upcomingList" class="timeline"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">ALGORITHMS</p>
+          <h2>Memory map</h2>
+        </div>
+        <button class="primary" id="addAlgorithmBtn" type="button">+ Add algorithm</button>
+      </div>
+      <div id="algorithmGrid" class="algorithm-grid"></div>
+    </section>
+
+    <footer>
+      <span>Schedule: D0 → D1 → D5 → D7 → D15 → D25 → maintenance</span>
+      <button class="link-button" id="exportBtn" type="button">Export progress</button>
+    </footer>
+  </main>
+
+  <dialog id="reviewDialog" class="modal">
+    <form method="dialog" class="modal-card" id="reviewForm">
+      <button class="modal-close" value="cancel" aria-label="Close">×</button>
+      <p class="eyebrow" id="reviewStage"></p>
+      <h2 id="reviewTitle"></h2>
+      <p class="muted" id="reviewPrompt"></p>
+      <a class="problem-link" id="reviewLink" target="_blank" rel="noreferrer">Open problem ↗</a>
+
+      <div class="reveal-row">
+        <span class="muted">Algorithm hidden for recognition practice</span>
+        <button type="button" class="ghost" id="revealAlgorithmBtn">Reveal</button>
+      </div>
+      <div id="algorithmReveal" class="algorithm-reveal" hidden></div>
+
+      <fieldset>
+        <legend>How did it go?</legend>
+        <div class="outcome-grid">
+          <label><input type="radio" name="outcome" value="independent" required><span>Solved independently</span></label>
+          <label><input type="radio" name="outcome" value="hint"><span>Solved with hint</span></label>
+          <label><input type="radio" name="outcome" value="recognition"><span>Didn't recognize pattern</span></label>
+          <label><input type="radio" name="outcome" value="implementation"><span>Implementation issue</span></label>
+          <label><input type="radio" name="outcome" value="concept"><span>Concept issue</span></label>
+        </div>
+      </fieldset>
+      <button class="primary full" value="default" type="submit">Save review</button>
+    </form>
+  </dialog>
+
+  <dialog id="algorithmDialog" class="modal">
+    <div class="modal-card details-card">
+      <button class="modal-close" id="algorithmCloseBtn" aria-label="Close">×</button>
+      <div id="algorithmDetails"></div>
+    </div>
+  </dialog>
+
+  <dialog id="addDialog" class="modal">
+    <form method="dialog" class="modal-card" id="addForm">
+      <button class="modal-close" value="cancel" aria-label="Close">×</button>
+      <p class="eyebrow">NEW ALGORITHM</p>
+      <h2>Add a retention track</h2>
+      <label class="field">Algorithm name<input id="newName" required placeholder="e.g. Segment Tree"></label>
+      <label class="field">Learned on<input id="newDate" type="date" required></label>
+      <label class="field">Core mental model<textarea id="newMentalModel" rows="3" placeholder="One sentence you should be able to reconstruct from."></textarea></label>
+      <p class="muted small">This creates the D0/D1/D5/D7/D15/D25 schedule. Problem slots can be populated later from the data file.</p>
+      <button class="primary full" value="default" type="submit">Create track</button>
+    </form>
+  </dialog>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
