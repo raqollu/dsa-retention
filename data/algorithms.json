@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "algorithms": [
+    {
+      "id": "fenwick-tree",
+      "name": "Fenwick Tree",
+      "learnedOn": "2026-09-23",
+      "mentalModel": "Each Fenwick index owns an aligned power-of-two block ending at itself. Queries consume owned blocks to the left; updates climb through larger blocks containing the changed point.",
+      "confidence": {
+        "concept": 4,
+        "implementation": 4,
+        "recognition": 3
+      },
+      "weaknesses": [
+        "Recognizing offline transformations where Fenwick stores 0/1 representatives rather than the requested quantity directly",
+        "Coordinate-compression boundary semantics: lower_bound vs upper_bound"
+      ],
+      "problems": {
+        "D0": {
+          "title": "Count of Smaller Numbers After Self",
+          "url": "https://leetcode.com/problems/count-of-smaller-numbers-after-self/",
+          "focus": "Coordinate compression + right-to-left prefix frequency counting"
+        },
+        "D1": {
+          "title": "Range Sum Query - Mutable",
+          "url": "https://leetcode.com/problems/range-sum-query-mutable/",
+          "focus": "Cold implementation recall: point update + prefix/range sum"
+        },
+        "D5": {
+          "title": "Create Sorted Array through Instructions",
+          "url": "https://leetcode.com/problems/create-sorted-array-through-instructions/",
+          "focus": "Recognition: dynamic counts of values smaller/greater than the current value"
+        },
+        "D7": {
+          "title": "Salary Queries",
+          "url": "https://cses.fi/problemset/task/1144",
+          "focus": "Redo the hardest compression/boundary weakness without old code"
+        },
+        "D15": {
+          "title": "Reverse Pairs",
+          "url": "https://leetcode.com/problems/reverse-pairs/",
+          "focus": "Mixed recognition: decide whether Fenwick + compression is appropriate before coding"
+        },
+        "D25": {
+          "title": "Count of Range Sum",
+          "url": "https://leetcode.com/problems/count-of-range-sum/",
+          "focus": "Retention test: transform prefix inequalities into ordered frequency queries"
+        }
+      }
+    }
+  ]
+}
