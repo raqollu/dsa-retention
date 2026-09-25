@@ -248,7 +248,7 @@ function renderToday(items, today) {
             : `<span class="badge">due today</span>`}
         </div>
         <h3>${escapeHTML(title)}</h3>
-        <p class="muted small">${escapeHTML(item.problem?.focus || "Recognition + recall review")}</p>
+        <p class="muted small">Solve cold. The algorithm and intended pattern stay hidden.</p>
       </div>
       <button class="primary">Start review</button>`;
 
@@ -317,7 +317,7 @@ function openReview(item) {
   $("reviewStage").textContent = `${item.stage} · ${formatDate(item.due, true)}`;
   $("reviewTitle").textContent = item.problem?.title || "Review slot";
   $("reviewPrompt").textContent =
-    item.problem?.focus || "Solve without looking at notes. Explain your invariant before coding.";
+    "Solve without looking at notes. Identify the approach yourself before revealing the algorithm.";
 
   const link = $("reviewLink");
   if (item.problem?.url) {
