@@ -184,6 +184,9 @@ function render() {
   $("activeCount").textContent = algorithms.length;
   $("streakCount").textContent = completed;
   $("showOverdueBtn").textContent = includeOverdue ? "Only today" : "Include overdue";
+  $("todayTabCount").textContent = due.length;
+  $("upcomingTabCount").textContent = upcoming.length;
+  $("memoryTabCount").textContent = algorithms.length;
 
   renderToday(due, today);
   renderUpcoming(upcoming.slice(0, 10));
@@ -192,6 +195,31 @@ function render() {
 
 function refreshIfDayChanged() {
   if (localISO() !== renderedDay) render();
+}
+
+function setActiveTab(tabName, updateHash = true) {
+  const validTabs = new Set(["today", "upcoming", "memory"]);
+  const nextTab = validTabs.has(tabName) ? tabName : "today";
+
+  document.querySelectorAll(".tab-button").forEach(button => {
+    const active = button.dataset.tab === nextTab;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  });
+
+  document.querySelectorAll(".tab-panel").forEach(panel => {
+    const active = panel.dataset.panel === nextTab;
+    panel.classList.toggle("active", active);
+    panel.hidden = !active;
+  });
+
+  if (updateHash) {
+    history.replaceState(null, "", `#${nextTab}`);
+  }
+}
+
+function tabFromHash() {
+  return window.location.hash.replace("#", "") || "today";
 }
 
 function renderToday(items, today) {
@@ -451,6 +479,12 @@ function escapeHTML(str = "") {
   }[c]));
 }
 
+document.querySelectorAll(".tab-button").forEach(button => {
+  button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+});
+
+window.addEventListener("hashchange", () => setActiveTab(tabFromHash(), false));
+
 $("showOverdueBtn").addEventListener("click", () => {
   includeOverdue = !includeOverdue;
   render();
@@ -545,6 +579,7 @@ async function boot() {
   }
 
   render();
+  setActiveTab(tabFromHash(), false);
 
   setInterval(refreshIfDayChanged, 60_000);
   document.addEventListener("visibilitychange", () => {
