@@ -123,3 +123,43 @@ legend { padding: 0; font-weight: 600; margin-bottom: 11px; }
   .algorithm-foot { flex-direction: column; gap: 5px; }
   footer { flex-direction: column; }
 }
+
+.history-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  flex-direction: column;
+}
+.danger-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--danger);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.danger-zone {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.danger-zone p { margin: 4px 0 0; }
+.danger-button {
+  flex: 0 0 auto;
+  border: 1px solid #d9a6a6;
+  background: #fff4f4;
+  color: var(--danger);
+  border-radius: 999px;
+  padding: 10px 14px;
+}
+.danger-button:hover { background: #fbe8e8; }
+
+@media (max-width: 680px) {
+  .danger-zone { align-items: stretch; flex-direction: column; }
+  .danger-button { width: 100%; }
+}
